@@ -1,17 +1,8 @@
 <?php
-// Reportar errores pero capturarlos para el JSON
-ini_set('display_errors', 0);
 header('Content-Type: application/json');
+error_reporting(0); // Evita etiquetas HTML basura
 
-// Incluir conexión con ruta absoluta para evitar problemas
-$conexion_path = __DIR__ . '/../conexion.php';
-
-if (!file_exists($conexion_path)) {
-    echo json_encode(["status" => "error", "mensaje" => "Archivo de conexión no encontrado en: " . $conexion_path]);
-    exit;
-}
-
-include $conexion_path;
+include 'conexion.php'; // Como todo es plano, no necesitas ../
 
 $usuario = $_POST['usuario'] ?? '';
 $password = $_POST['password'] ?? '';
