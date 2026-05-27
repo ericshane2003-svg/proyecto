@@ -1,32 +1,30 @@
-# Usamos la imagen oficial de PHP con Apache
 FROM php:8.2-apache
 
-# Instalamos dependencias, wget, unzip y las librerías gráficas para Dompdf
+# Instalamos dependencias básicas
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
     zip \
     unzip \
-    wget \
     git \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd mysqli pdo pdo_mysql
 
-# Habilitamos el módulo rewrite de Apache
+# Instalamos Composer (el gestor profesional de PHP)
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Habilitamos rewrite
 RUN a2enmod rewrite
 
-# Copiamos TU código (Vista, Modelo, Controlador) al servidor
+# Copiamos todo el código
 COPY . /var/www/html/
 
-# ¡EL TRUCO MAESTRO! Descargamos dompdf directo en el servidor de Render y lo extraemos
-RUN wget https://github.com/dompdf/dompdf/releases/download/v2.0.4/dompdf_2-0-4.zip \
-    && unzip dompdf_2-0-4.zip -d /var/www/html/ \
-    && rm dompdf_2-0-4.zip
+# Instalamos dompdf usando composer (esto es 100% confiable)
+RUN composer install --no-dev --optimize-autoloader
 
-# Le damos permisos a Apache para que no haya errores al generar los PDF
-RUN chown -R www-data:www-data /var/www/html/
-RUN chmod -R 755 /var/www/html/
+# Permisos
+RUN chown -R www-data:www-data /var/www/html/ \
+    && chmod -R 755 /var/www/html/
 
-# Exponemos el puerto 80
 EXPOSE 80
