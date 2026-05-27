@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../Modelo/conexion.php';
+include '../conexion.php';
 include 'registrar_log.php'; // Incluimos la función de logs
 
 header('Content-Type: application/json');
