@@ -1,38 +1,38 @@
 <?php
+header('Content-Type: application/json');
 session_start();
 include '../Modelo/conexion.php';
-include 'registrar_log.php';
 
-header('Content-Type: application/json');
+// Validar que llegaron datos
+if (!isset($_POST['usuario']) || !isset($_POST['password'])) {
+    echo json_encode(["status" => "error", "mensaje" => "Datos incompletos"]);
+    exit;
+}
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $usuario = trim($_POST['usuario']);
-    $password_input = $_POST['password'];
+$user = $_POST['usuario'];
+$pass = $_POST['password'];
 
-    // Encriptamos la entrada con MD5 para que coincida con el formato original
-    $password_md5 = md5($password_input);
-
-    // Consulta directa usando MD5
-    $stmt = $conexion->prepare("SELECT u.id, r.nombre AS rol_nombre 
-                                FROM usuarios u 
-                                INNER JOIN roles r ON u.id_rol = r.id 
-                                WHERE u.nombre = ? AND u.password = ?");
-    $stmt->bind_param("ss", $usuario, $password_md5);
+try {
+    $stmt = $conexion->prepare("SELECT u.id, u.password, r.nombre as rol FROM usuarios u INNER JOIN roles r ON u.id_rol = r.id WHERE u.nombre = ?");
+    $stmt->bind_param("s", $user);
     $stmt->execute();
     $res = $stmt->get_result();
 
     if ($res->num_rows > 0) {
-        $user_data = $res->fetch_assoc();
+        $fila = $res->fetch_assoc();
         
-        $_SESSION['usuario'] = $usuario;
-        $_SESSION['rol'] = $user_data['rol_nombre'];
-        
-        guardarLog($conexion, $usuario, "Login exitoso (MD5).");
-        echo json_encode(["status" => "success", "mensaje" => "Bienvenido"]);
+        // Verificación de contraseña (ajusta esto si usas password_verify o texto plano)
+        if ($pass === $fila['password']) {
+            $_SESSION['usuario'] = $user;
+            $_SESSION['rol'] = $fila['rol'];
+            echo json_encode(["status" => "success", "mensaje" => "Bienvenido", "rol" => $fila['rol']]);
+        } else {
+            echo json_encode(["status" => "error", "mensaje" => "Contraseña incorrecta"]);
+        }
     } else {
-        guardarLog($conexion, $usuario, "Intento fallido: usuario o pass incorrecto.");
-        echo json_encode(["status" => "error", "mensaje" => "Usuario o contraseña incorrectos."]);
+        echo json_encode(["status" => "error", "mensaje" => "Usuario no existe"]);
     }
-    $stmt->close();
+} catch (Exception $e) {
+    echo json_encode(["status" => "error", "mensaje" => "Error del servidor: " . $e->getMessage()]);
 }
 ?>
