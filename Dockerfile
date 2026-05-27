@@ -19,10 +19,10 @@ RUN a2enmod rewrite
 # Copiamos TU código (Vista, Modelo, Controlador) al servidor
 COPY . /var/www/html/
 
-# ¡EL TRUCO MAESTRO CORREGIDO! Usamos el link oficial de la última versión estable (3.1.5)
-RUN wget https://github.com/dompdf/dompdf/releases/download/v3.1.5/dompdf-3.1.5.zip \
-    && unzip dompdf-3.1.5.zip -d /var/www/html/ \
-    && rm dompdf-3.1.5.zip
+# ¡EL TRUCO MAESTRO! Descargamos dompdf directo en el servidor de Render y lo extraemos
+RUN wget https://github.com/dompdf/dompdf/releases/download/v2.0.4/dompdf_2-0-4.zip \
+    && unzip dompdf_2-0-4.zip -d /var/www/html/ \
+    && rm dompdf_2-0-4.zip
 
 # Le damos permisos a Apache para que no haya errores al generar los PDF
 RUN chown -R www-data:www-data /var/www/html/
