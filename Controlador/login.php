@@ -1,47 +1,31 @@
 <?php
-// 1. SILENCIAR ERRORES HTML Y FORZAR JSON
-header('Content-Type: application/json');
+// Esto fuerza a que CUALQUIER cosa que ocurra se envíe como texto plano, NO como HTML
+header('Content-Type: text/plain'); 
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Desactivamos errores en pantalla
+ini_set('display_errors', 1);
 
-function enviarError($msg) {
-    echo json_encode(["status" => "error", "mensaje" => $msg]);
-    exit;
-}
-
-// 2. Incluir conexión con manejo de errores
-$ruta = __DIR__ . '/../Modelo/conexion.php';
-if (!file_exists($ruta)) enviarError("No se encuentra el archivo de conexión");
-include $ruta;
-
-if (!isset($conexion)) enviarError("Error interno: la conexión no se inicializó");
-
-// 3. Validación
-$usuario = $_POST['usuario'] ?? '';
-$password = $_POST['password'] ?? '';
-
-if (empty($usuario) || empty($password)) enviarError("Campos incompletos");
-
-// 4. Consulta
-$stmt = $conexion->prepare("SELECT password, rol FROM usuarios WHERE nombre = ?");
-if (!$stmt) enviarError("Error en base de datos: " . $conexion->error);
-
-$stmt->bind_param("s", $usuario);
-$stmt->execute();
-$res = $stmt->get_result();
-
-if ($res->num_rows > 0) {
-    $fila = $res->fetch_assoc();
-    // Comparación directa (si en el futuro usas password_hash, cambia esto a password_verify)
-    if ($password === $fila['password']) {
-        session_start();
-        $_SESSION['usuario'] = $usuario;
-        $_SESSION['rol'] = $fila['rol'];
-        echo json_encode(["status" => "success", "mensaje" => "Acceso correcto"]);
-    } else {
-        enviarError("Contraseña incorrecta");
+try {
+    include __DIR__ . '/../Modelo/conexion.php';
+    
+    if (!isset($conexion)) {
+        die("ERROR: La variable \$conexion no existe después del include.");
     }
-} else {
-    enviarError("Usuario no existe");
+
+    echo "Conexión recibida exitosamente. ";
+
+    $usuario = $_POST['usuario'] ?? 'nada';
+    $password = $_POST['password'] ?? 'nada';
+
+    echo "Usuario recibido: " . $usuario;
+
+    // Aquí forzamos una consulta simple
+    $stmt = $conexion->prepare("SELECT 1");
+    if (!$stmt) {
+        die(" ERROR SQL: " . $conexion->error);
+    }
+    echo " Consulta SQL exitosa.";
+
+} catch (Exception $e) {
+    echo " EXCEPCIÓN: " . $e->getMessage();
 }
 ?>
