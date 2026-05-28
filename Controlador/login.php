@@ -1,14 +1,20 @@
 <?php
+// Forzar que el servidor nunca envíe HTML, solo JSON
 header('Content-Type: application/json');
+
+// Manejador de errores personalizado
+set_error_handler(function($errno, $errstr) {
+    echo json_encode(["status" => "error", "mensaje" => "Error interno: $errstr"]);
+    exit;
+});
+
 include __DIR__ . '/../Modelo/conexion.php';
 
-// Limpiamos los datos
 $usuario = $_POST['usuario'] ?? '';
 $password = $_POST['password'] ?? '';
 
-// Si recibimos vacío, es porque el formulario no envió nada
-if (empty($usuario)) {
-    echo json_encode(["status" => "error", "mensaje" => "No se recibieron datos. Revisa el formulario."]);
+if (empty($usuario) || empty($password)) {
+    echo json_encode(["status" => "error", "mensaje" => "Datos vacíos"]);
     exit;
 }
 
@@ -17,8 +23,7 @@ $stmt->bind_param("s", $usuario);
 $stmt->execute();
 $res = $stmt->get_result();
 
-if ($res->num_rows > 0) {
-    $fila = $res->fetch_assoc();
+if ($fila = $res->fetch_assoc()) {
     if ($password === $fila['password']) {
         session_start();
         $_SESSION['usuario'] = $usuario;
