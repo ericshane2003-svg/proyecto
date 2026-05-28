@@ -1,34 +1,44 @@
 <?php
-require_once '../dompdf/autoload.inc.php';
+require_once('../vendor/autoload.php');
 use Dompdf\Dompdf;
 
 session_start();
-include '../Modelo/conexion.php';
+error_reporting(0);
+include __DIR__ . '/../Modelo/conexion.php';
 
-if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'administrador') {
-    exit("No tienes permisos para ver este reporte.");
+// Seguridad: Solo el admin puede ver esto
+if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'administrador') {
+    exit("Acceso denegado. Solo administradores.");
 }
 
-$fecha_reporte = date('d/m/Y H:i');
-
 $html = "
-    <h2 style='text-align:center;'>Bitácora del Sistema (Logs)</h2>
-    <p><strong>Generado el:</strong> $fecha_reporte</p>
-    <table border='1' width='100%' style='border-collapse: collapse; font-family: sans-serif; text-align: left;'>
-        <tr style='background-color: #f2f2f2;'>
-            <th style='padding: 8px;'>Usuario</th>
-            <th style='padding: 8px;'>Acción Realizada</th>
-            <th style='padding: 8px;'>Fecha y Hora</th>
+    <style>
+        body { font-family: sans-serif; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #6c757d; padding-bottom: 10px; margin-bottom: 20px; }
+        .tabla { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .tabla th { background-color: #f8f9fa; border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .tabla td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    </style>
+    
+    <div class='header'>
+        <h2>📋 Bitácora de Auditoría (Logs)</h2>
+        <p>Reporte generado el: " . date('d/m/Y H:i') . "</p>
+    </div>
+    
+    <table class='tabla'>
+        <tr>
+            <th>Acción Registrada</th>
+            <th>Fecha y Hora</th>
         </tr>
 ";
 
-$res = $conexion->query("SELECT usuario, accion, fecha_hora FROM logs_sistema ORDER BY fecha_hora DESC");
+// Consultamos la bitácora de logs
+$res_l = $conexion->query("SELECT accion, fecha_hora FROM logs_sistema ORDER BY fecha_hora DESC");
 
-while ($l = $res->fetch_assoc()) {
+while($l = $res_l->fetch_assoc()) {
     $html .= "<tr>
-                <td style='padding: 8px;'>" . htmlspecialchars($l['usuario']) . "</td>
-                <td style='padding: 8px;'>" . htmlspecialchars($l['accion']) . "</td>
-                <td style='padding: 8px;'>" . date('d/m/Y H:i', strtotime($l['fecha_hora'])) . "</td>
+                <td>" . htmlspecialchars($l['accion']) . "</td>
+                <td>" . date('d/m/Y H:i', strtotime($l['fecha_hora'])) . "</td>
               </tr>";
 }
 
@@ -38,5 +48,5 @@ $dompdf = new Dompdf();
 $dompdf->loadHtml($html);
 $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
-$dompdf->stream("Reporte_Logs_" . time() . ".pdf", ["Attachment" => true]);
+$dompdf->stream("Reporte_Logs_" . date('Ymd_Hi') . ".pdf", ["Attachment" => true]);
 ?>
