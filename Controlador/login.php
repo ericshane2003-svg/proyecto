@@ -1,21 +1,32 @@
 <?php
 header('Content-Type: application/json');
 
-// 1. Probamos la conexión
-$ruta = __DIR__ . '/../Modelo/conexion.php';
-include $ruta;
+// Incluir conexión
+include __DIR__ . '/../Modelo/conexion.php';
 
-if (!isset($conexion)) {
-    die(json_encode(["status" => "error", "mensaje" => "La variable conexion NO se creó"]));
+// Validar entrada
+$usuario = $_POST['usuario'] ?? '';
+$password = $_POST['password'] ?? '';
+
+if (empty($usuario) || empty($password)) {
+    echo json_encode(["status" => "error", "mensaje" => "Campos vacíos"]);
+    exit;
 }
 
-// 2. Probamos una consulta simple, sin lógica compleja
-$query = "SELECT 1"; 
-$resultado = $conexion->query($query);
+$stmt = $conexion->prepare("SELECT password FROM usuarios WHERE nombre = ?");
+$stmt->bind_param("s", $usuario);
+$stmt->execute();
+$res = $stmt->get_result();
 
-if ($resultado) {
-    echo json_encode(["status" => "success", "mensaje" => "Conexión a BD exitosa, sistema listo"]);
+if ($res->num_rows > 0) {
+    $fila = $res->fetch_assoc();
+    if ($password === $fila['password']) {
+        session_start();
+        echo json_encode(["status" => "success", "mensaje" => "Acceso correcto"]);
+    } else {
+        echo json_encode(["status" => "error", "mensaje" => "Contraseña incorrecta"]);
+    }
 } else {
-    echo json_encode(["status" => "error", "mensaje" => "Error al consultar BD: " . $conexion->error]);
+    echo json_encode(["status" => "error", "mensaje" => "Usuario no existe"]);
 }
 ?>
