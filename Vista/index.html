@@ -60,19 +60,26 @@
         e.preventDefault();
         const formData = new FormData(this);
         
-        fetch('../Controlador/login.php', {
+        // Usamos ruta absoluta desde la raíz para evitar errores de nivel
+        fetch('/Controlador/login.php', {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error('Error en el servidor');
+            return response.json();
+        })
         .then(data => {
             if (data.status === 'success') {
                 window.location.href = 'panel.php';
             } else {
-                alert(data.mensaje);
+                alert(data.mensaje || 'Error desconocido');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al conectar con el servidor: ' + error.message);
+        });
     });
 </script>
 
