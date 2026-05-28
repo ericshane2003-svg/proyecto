@@ -85,9 +85,9 @@ if (!isset($_SESSION['usuario'])) {
         </div>
         
         <div class="card-footer bg-white border-0 p-3">
-            <a href="../Controlador/generar_factura.php" class="btn btn-success w-100 fs-5 py-3 fw-bold shadow-sm">
-                💰 Finalizar Compra y Generar Factura PDF
-            </a>
+            <a href="../Controlador/pagar.php" class="btn btn-success w-100 fs-5 py-3 fw-bold shadow-sm">
+        💰 Finalizar Compra y Generar Factura PDF
+             </a>
         </div>
     </div>
 </div>
