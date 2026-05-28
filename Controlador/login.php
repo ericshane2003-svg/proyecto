@@ -1,21 +1,23 @@
 <?php
-header('Content-Type: application/json');
-error_reporting(E_ALL); // Cambiamos a E_ALL para ver errores si hay problemas
+// Esto es para depurar. Si esto sale en el Response, ya sabemos que el archivo SÍ abre.
+// die("El archivo login.php sí se está ejecutando"); 
 
-// Buscamos la conexión subiendo un nivel y entrando a la carpeta Modelo
-// Si esto falla, el problema es que la carpeta 'Modelo' no está donde crees
+header('Content-Type: application/json');
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Ruta absoluta blindada
 $ruta_conexion = __DIR__ . '/../Modelo/conexion.php';
 
-if (file_exists($ruta_conexion)) {
-    include $ruta_conexion;
-} else {
-    // Si no encuentra el archivo, enviamos este JSON para saber dónde está buscando
-    echo json_encode([
-        "status" => "error", 
-        "mensaje" => "Archivo no encontrado", 
-        "ruta_buscada" => $ruta_conexion,
-        "directorio_actual" => __DIR__
-    ]);
+if (!file_exists($ruta_conexion)) {
+    echo json_encode(["status" => "error", "mensaje" => "No existe: " . $ruta_conexion]);
+    exit;
+}
+
+include $ruta_conexion;
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(["status" => "error", "mensaje" => "No es POST"]);
     exit;
 }
 
@@ -27,13 +29,11 @@ if (empty($usuario) || empty($password)) {
     exit;
 }
 
-// Aseguramos que la variable $conexion exista
-if (!isset($conexion)) {
-    echo json_encode(["status" => "error", "mensaje" => "La conexión a la BD no se inicializó"]);
+$stmt = $conexion->prepare("SELECT u.password, r.nombre as rol FROM usuarios u INNER JOIN roles r ON u.id_rol = r.id WHERE u.nombre = ?");
+if (!$stmt) {
+    echo json_encode(["status" => "error", "mensaje" => "Error SQL: " . $conexion->error]);
     exit;
 }
-
-$stmt = $conexion->prepare("SELECT u.password, r.nombre as rol FROM usuarios u INNER JOIN roles r ON u.id_rol = r.id WHERE u.nombre = ?");
 $stmt->bind_param("s", $usuario);
 $stmt->execute();
 $res = $stmt->get_result();
