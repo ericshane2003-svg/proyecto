@@ -1,5 +1,5 @@
 <?php
-require_once '../dompdf/autoload.inc.php'; 
+require_once('../vendor/autoload.php');
 use Dompdf\Dompdf;
 
 session_start();
