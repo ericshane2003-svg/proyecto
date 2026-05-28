@@ -1,14 +1,21 @@
 <?php
-// Forzar que el servidor hable, incluso si hay errores
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Esto es para probar si el archivo siquiera se ejecuta
-die(json_encode(["status" => "debug", "mensaje" => "El archivo PHP se ejecutó correctamente"]));
-
-/* // --- CÓDIGO ACTUAL COMENTADO PARA NO INTERFERIR ---
 header('Content-Type: application/json');
-include __DIR__ . '/../Modelo/conexion.php';
-// ... el resto de tu lógica ...
-*/
+
+// 1. Probamos la conexión
+$ruta = __DIR__ . '/../Modelo/conexion.php';
+include $ruta;
+
+if (!isset($conexion)) {
+    die(json_encode(["status" => "error", "mensaje" => "La variable conexion NO se creó"]));
+}
+
+// 2. Probamos una consulta simple, sin lógica compleja
+$query = "SELECT 1"; 
+$resultado = $conexion->query($query);
+
+if ($resultado) {
+    echo json_encode(["status" => "success", "mensaje" => "Conexión a BD exitosa, sistema listo"]);
+} else {
+    echo json_encode(["status" => "error", "mensaje" => "Error al consultar BD: " . $conexion->error]);
+}
 ?>
