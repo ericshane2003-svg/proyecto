@@ -60,7 +60,7 @@
         e.preventDefault();
         const formData = new FormData(this);
         
-        // Usamos ruta absoluta desde la raíz para evitar errores de nivel
+        // Petición al controlador usando ruta absoluta desde raíz
         fetch('/Controlador/login.php', {
             method: 'POST',
             body: formData
@@ -71,7 +71,8 @@
         })
         .then(data => {
             if (data.status === 'success') {
-                window.location.href = 'panel.php';
+                // Redirección absoluta al panel
+                window.location.href = '/Vista/panel.php';
             } else {
                 alert(data.mensaje || 'Error desconocido');
             }
