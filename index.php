@@ -1,5 +1,5 @@
 <?php
-// Esto redirige automáticamente a los visitantes a tu página de login
+// Redirige automáticamente a la carpeta donde está tu interfaz principal
 header("Location: Vista/index.html");
-exit;
+exit();
 ?>
