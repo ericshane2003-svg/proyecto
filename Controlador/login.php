@@ -1,30 +1,27 @@
 <?php
-// Configuración para forzar JSON y evitar errores HTML
 header('Content-Type: application/json');
-error_reporting(E_ALL);
-ini_set('display_errors', 0); // Desactivamos errores en pantalla para no romper JSON
 
-// La ruta desde /Controlador hacia arriba a /Modelo/conexion.php
-$ruta_conexion = __DIR__ . '/../Modelo/conexion.php';
+// 1. Incluimos con una ruta de seguridad absoluta
+$ruta = __DIR__ . '/../Modelo/conexion.php';
+if (!file_exists($ruta)) {
+    die(json_encode(["status" => "error", "mensaje" => "No existe archivo conexion.php"]));
+}
+include $ruta;
 
-if (!file_exists($ruta_conexion)) {
-    echo json_encode(["status" => "error", "mensaje" => "Error interno: Archivo de conexión no hallado"]);
-    exit;
+// 2. Blindaje: Verificamos si la variable $conexion fue creada exitosamente
+if (!isset($conexion) || !($conexion instanceof mysqli)) {
+    die(json_encode(["status" => "error", "mensaje" => "La variable conexion no se inicializó correctamente"]));
 }
 
-include $ruta_conexion;
-
-// Validar entrada
 $usuario = $_POST['usuario'] ?? '';
 $password = $_POST['password'] ?? '';
 
-if (empty($usuario) || empty($password)) {
-    echo json_encode(["status" => "error", "mensaje" => "Campos incompletos"]);
-    exit;
+// 3. Blindaje de consulta
+$stmt = $conexion->prepare("SELECT password, nombre FROM usuarios WHERE nombre = ?");
+if (!$stmt) {
+    die(json_encode(["status" => "error", "mensaje" => "Error en prepare: " . $conexion->error]));
 }
 
-// Consulta SQL
-$stmt = $conexion->prepare("SELECT u.password, r.nombre as rol FROM usuarios u INNER JOIN roles r ON u.id_rol = r.id WHERE u.nombre = ?");
 $stmt->bind_param("s", $usuario);
 $stmt->execute();
 $res = $stmt->get_result();
