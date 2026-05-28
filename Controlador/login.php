@@ -1,16 +1,23 @@
 <?php
-error_reporting(0);
 header('Content-Type: application/json');
+error_reporting(E_ALL); // Cambiamos a E_ALL para ver errores si hay problemas
 
-// La ruta exacta para subir desde Controlador hasta Modelo
+// Buscamos la conexión subiendo un nivel y entrando a la carpeta Modelo
+// Si esto falla, el problema es que la carpeta 'Modelo' no está donde crees
 $ruta_conexion = __DIR__ . '/../Modelo/conexion.php';
 
-if (!file_exists($ruta_conexion)) {
-    echo json_encode(["status" => "error", "mensaje" => "No encuentro conexion.php en: " . $ruta_conexion]);
+if (file_exists($ruta_conexion)) {
+    include $ruta_conexion;
+} else {
+    // Si no encuentra el archivo, enviamos este JSON para saber dónde está buscando
+    echo json_encode([
+        "status" => "error", 
+        "mensaje" => "Archivo no encontrado", 
+        "ruta_buscada" => $ruta_conexion,
+        "directorio_actual" => __DIR__
+    ]);
     exit;
 }
-
-include $ruta_conexion;
 
 $usuario = $_POST['usuario'] ?? '';
 $password = $_POST['password'] ?? '';
@@ -20,7 +27,12 @@ if (empty($usuario) || empty($password)) {
     exit;
 }
 
-// ... aquí tu consulta SQL (la que ya tienes) ...
+// Aseguramos que la variable $conexion exista
+if (!isset($conexion)) {
+    echo json_encode(["status" => "error", "mensaje" => "La conexión a la BD no se inicializó"]);
+    exit;
+}
+
 $stmt = $conexion->prepare("SELECT u.password, r.nombre as rol FROM usuarios u INNER JOIN roles r ON u.id_rol = r.id WHERE u.nombre = ?");
 $stmt->bind_param("s", $usuario);
 $stmt->execute();
