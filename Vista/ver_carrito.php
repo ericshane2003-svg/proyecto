@@ -1,9 +1,10 @@
 <?php
 session_start();
+include '../Modelo/conexion.php';
 
-if (!isset($_SESSION['usuario'])) { 
-    header("Location: index.html"); 
-    exit; 
+if (!isset($_SESSION['usuario'])) {
+    header("Location: index.html");
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -11,129 +12,85 @@ if (!isset($_SESSION['usuario'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Carrito - Sistema de Inventario</title>
+    <title>Mi Carrito</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
-<div class="container mt-5">
+<div class="container mt-5 mb-5">
     <div class="card shadow-sm border-0">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">🛒 Mi Carrito de Compras</h5>
-            <a href="panel.php" class="btn btn-sm btn-secondary">Regresar al Panel</a>
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0 text-secondary">🛒 Mi Carrito de Compras</h5>
+            <a href="panel.php" class="btn btn-secondary btn-sm">Regresar al Panel</a>
         </div>
-        <div class="card-body">
-            <?php 
-            if (!isset($_SESSION['carrito']) || empty($_SESSION['carrito'])): ?>
-                <div class="alert alert-info">Tu carrito está vacío. Agrega productos desde el catálogo.</div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Producto</th>
-                                <th>Precio Unitario</th>
-                                <th>Cantidad</th>
-                                <th>Subtotal</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php 
-                            $total = 0;
-                            foreach ($_SESSION['carrito'] as $id => $item): 
-                                $subtotal = $item['precio'] * $item['cantidad'];
-                                $total += $subtotal;
-                            ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($item['nombre']); ?></td>
-                                <td>$<?php echo number_format($item['precio'], 2); ?></td>
-                                <td><span class="badge bg-primary fs-6"><?php echo $item['cantidad']; ?></span></td>
-                                <td>$<?php echo number_format($subtotal, 2); ?></td>
-                                <td>
-                                    <div class="input-group input-group-sm" style="width: 140px;">
-                                        <input type="number" id="quitar_<?php echo $id; ?>" class="form-control text-center" value="1" min="1" max="<?php echo $item['cantidad']; ?>">
-                                        <button class="btn btn-danger" onclick="eliminarDelCarrito(<?php echo $id; ?>)">🗑️</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="3" class="text-end fw-bold fs-5">TOTAL A PAGAR:</td>
-                                <td class="fw-bold fs-5 text-success">$<?php echo number_format($total, 2); ?></td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                
-                <div class="d-grid gap-2 mt-4">
-                    <button class="btn btn-success btn-lg" onclick="procesarPago()">
-                        💰 Finalizar Compra y Generar Factura PDF
-                    </button>
-                </div>
-            <?php endif; ?>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Producto</th>
+                            <th>Precio Unitario</th>
+                            <th class="text-center">Cantidad</th>
+                            <th>Subtotal</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $total_pagar = 0;
+                        
+                        // Verificamos si hay algo en el carrito
+                        if (isset($_SESSION['carrito']) && !empty($_SESSION['carrito'])) {
+                            // Recorremos el carrito
+                            foreach ($_SESSION['carrito'] as $id_prod => $item) {
+                                $cant = $item['cantidad'];
+
+                                // Consultamos a la BD para sacar el nombre y precio real
+                                $stmt = $conexion->prepare("SELECT nombre, precio FROM productos WHERE id = ?");
+                                $stmt->bind_param("i", $id_prod);
+                                $stmt->execute();
+                                $res = $stmt->get_result();
+
+                                if ($prod = $res->fetch_assoc()) {
+                                    $subtotal = $prod['precio'] * $cant;
+                                    $total_pagar += $subtotal;
+                                    ?>
+                                    <tr>
+                                        <td class="ps-4 fw-bold"><?php echo htmlspecialchars($prod['nombre']); ?></td>
+                                        <td>$<?php echo number_format($prod['precio'], 2); ?></td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary fs-6 px-3 py-2 rounded-2"><?php echo $cant; ?></span>
+                                        </td>
+                                        <td class="fw-bold">$<?php echo number_format($subtotal, 2); ?></td>
+                                        <td>
+                                            <button class="btn btn-danger btn-sm">🗑️</button>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                }
+                            }
+                        } else {
+                            echo "<tr><td colspan='5' class='text-center py-5 text-muted'>Tu carrito está vacío 🥺</td></tr>";
+                        }
+                        ?>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-4 bg-white border-top d-flex justify-content-end align-items-center">
+                <h4 class="mb-0 text-dark me-3">TOTAL A PAGAR:</h4>
+                <h4 class="mb-0 text-success fw-bold">$<?php echo number_format($total_pagar, 2); ?></h4>
+            </div>
+        </div>
+        
+        <div class="card-footer bg-white border-0 p-3">
+            <a href="../Controlador/generar_factura.php" class="btn btn-success w-100 fs-5 py-3 fw-bold shadow-sm">
+                💰 Finalizar Compra y Generar Factura PDF
+            </a>
         </div>
     </div>
 </div>
-
-<script>
-    function eliminarDelCarrito(id) {
-        // Aseguramos matemáticamente que el valor sea un entero válido
-        const inputValor = document.getElementById('quitar_' + id).value;
-        const cantidad_quitar = parseInt(inputValor);
-
-        if(isNaN(cantidad_quitar) || cantidad_quitar <= 0) {
-            alert("Por favor, ingresa una cantidad válida a quitar.");
-            return;
-        }
-
-        if(!confirm(`¿Seguro que deseas quitar ${cantidad_quitar} unidad(es) de este producto?`)) return;
-
-        const fd = new FormData();
-        fd.append('id', id);
-        fd.append('cantidad', cantidad_quitar);
-        fd.append('accion', 'eliminar_item');
-
-        fetch('../Controlador/gestionar_carrito.php', {
-            method: 'POST',
-            body: fd
-        })
-        .then(response => response.json())
-        .then(data => {
-            if(data.status === 'success') {
-                location.reload(); 
-            } else {
-                alert(data.mensaje);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    }
-
-    function procesarPago() {
-        if(!confirm("¿Confirmar compra y generar ticket?")) return;
-
-        fetch('../Controlador/pagar.php', { 
-            method: 'POST' 
-        })
-        .then(response => response.json())
-        .then(data => {
-            if(data.status === 'success') {
-                alert(data.mensaje);
-                window.open(data.url_factura, '_blank');
-                setTimeout(() => { window.location.href = 'panel.php'; }, 1000);
-            } else {
-                alert(data.mensaje);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert("Error de conexión con el servidor.");
-        });
-    }
-</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
