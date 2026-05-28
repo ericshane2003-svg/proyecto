@@ -18,7 +18,7 @@
         <img class="icono-gato rounded-circle" src="../Assets/image.png" alt="Bienvenida">
         <h3 class="text-center mb-4">Iniciar Sesión</h3>
         
-        <form id="formularioLogin" method="POST">
+        <form id="formularioLogin">
             <div class="mb-3">
                 <label for="usuario" class="form-label">Usuario:</label>
                 <input type="text" id="usuario" name="usuario" class="form-control" placeholder="Ej: admin" required>
@@ -43,7 +43,7 @@
 </div>
 
 <script>
-    // Lógica para ver/ocultar contraseña
+    // 1. Mostrar/Ocultar contraseña
     document.getElementById('ver').addEventListener('click', function() {
         const pass = document.getElementById('password');
         if (pass.type === "password") {
@@ -55,31 +55,29 @@
         }
     });
 
-    // Lógica de envío (AJAX)
+    // 2. Lógica del Login
     document.getElementById('formularioLogin').addEventListener('submit', function(e) {
         e.preventDefault();
+        
+        // FormData captura automáticamente los campos por su atributo 'name'
         const formData = new FormData(this);
         
-        // Petición al controlador usando ruta absoluta desde raíz
         fetch('/Controlador/login.php', {
             method: 'POST',
             body: formData
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Error en el servidor');
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                // Redirección absoluta al panel
+                // Redirección hacia el panel
                 window.location.href = '/Vista/panel.php';
             } else {
-                alert(data.mensaje || 'Error desconocido');
+                alert(data.mensaje);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al conectar con el servidor: ' + error.message);
+            alert('Error al conectar con el servidor');
         });
     });
 </script>
