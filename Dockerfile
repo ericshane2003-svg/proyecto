@@ -1,30 +1,27 @@
 FROM php:8.2-apache
 
-# Instalamos dependencias básicas
+# Instalación de dependencias
 RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    zip \
-    unzip \
-    git \
+    libpng-dev libjpeg-dev libfreetype6-dev zip unzip git \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd mysqli pdo pdo_mysql
 
-# Instalamos Composer profesionalmente
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Habilitamos rewrite
+# Habilitar Apache Rewrite para que las rutas funcionen
 RUN a2enmod rewrite
 
-# Copiamos TODO a la raíz del servidor
+# Instalar Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# COPIAR TODO EL CONTENIDO A LA RAÍZ DEL SERVIDOR
+# Si tu proyecto en GitHub tiene las carpetas afuera, esto las moverá a /var/www/html/
 COPY . /var/www/html/
 
-# Instalamos las librerías automáticamente (esto sustituye al wget roto)
+# Instalar Dompdf
 RUN composer install --no-dev --optimize-autoloader
 
-# Permisos para Apache
+# Permisos
 RUN chown -R www-data:www-data /var/www/html/ \
     && chmod -R 755 /var/www/html/
 
+# Exponer el puerto
 EXPOSE 80
