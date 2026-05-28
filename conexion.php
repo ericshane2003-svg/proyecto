@@ -1,15 +1,19 @@
 <?php
-error_reporting(0);
-$host = getenv('DB_HOST') ?: 'localhost';
-$user = getenv('DB_USER') ?: 'root';
-$pass = getenv('DB_PASS') ?: '';
-$db   = getenv('DB_NAME') ?: 'inventario_db';
-$port = getenv('DB_PORT') ?: 3306;
+// Modelo/conexion.php
+$host = trim(str_replace(['Valor:', 'Value:'], '', getenv('DB_HOST')));
+$user = trim(str_replace(['Valor:', 'Value:'], '', getenv('DB_USER')));
+$pass = trim(str_replace(['Valor:', 'Value:'], '', getenv('DB_PASS')));
+$db   = trim(str_replace(['Valor:', 'Value:'], '', getenv('DB_NAME')));
 
-$conexion = new mysqli($host, $user, $pass, $db, $port);
-if ($conexion->connect_error) { 
-    echo json_encode(["status" => "error", "mensaje" => "Error DB"]); 
-    exit; 
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+try {
+    $conexion = new mysqli($host, $user, $pass, $db);
+    // Si llegamos aquí, todo bien
+} catch (mysqli_sql_exception $e) {
+    // Si falla, enviamos un error limpio
+    header('Content-Type: application/json');
+    echo json_encode(["status" => "error", "mensaje" => "Error de conexión BD"]);
+    exit;
 }
-$conexion->set_charset("utf8mb4");
 ?>
